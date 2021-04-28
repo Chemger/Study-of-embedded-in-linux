@@ -188,25 +188,63 @@ int listen(int s, int backlog);
 ## (5)等待客户端的请求accept
 
 处理客户端的连接请求
-		
 
     #include <sys/types.h>         
     #include <sys/socket.h>   
        int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
     		//sockfd:套接字描述符
-    		//addr: 网络地址结构体变量的指针，
+    		//addr: 通用的网络地址结构体变量的指针，
     				该结构体用来保存向我请求连接的客户端的
     				网络地址
     		
-    		//addrlen：
+    		//addrlen：网络地址结构体长度类型的指针, 事先要保存第二个参数指向的结构体的长度
+    					//目的是为了防止越界
+    					//如果函数成功了, addrlen指向的空间会更新为真正的结构体网络地址的长度
+    					int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen){
+    						...
+    						获取到了客户端的网络地址
+    						clientaddr = ...
+    						...
+    						
+    						memcpy(addr,&clientaddr,*addrlen);
+    						8addrlen = sizeof(clientaddr);
+    					}
+    		//返回值: 成功返回一个新的套接字描述符, 这个描述符就是后续用来与客户端进行通信的
+    					//思考: 为什么需要新的描述符, 而不直接用socket函数返回的那个套接字描述符来进行通信??
+    					//因为服务端可以与多个客户端进行通信, 所以socket返回的套接字描述符是用来监听客户端和连接客户端的
+    					//连接成功后返回的这个描述符才是真正用来与客户端进行通信的
 
 
 ​		
 
+## (6)connet 用于tcp client去连接 tcp server
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+//sockfd: 套接字描述符
+//addr: 服务端的网络地址
+//addrlen: 第二个参数的长度
+//返回值: 成功返回0, 失败返回-1, 同时errno被设置
+```
+
+**==为什么服务端必须要bind, 而客户端不是必须的??==**
+
+> bind还是不bind, 底层都会给套接字绑定一个网络地址(ip可能会自动获取, 但是端口号是任意值), 如果服务端不绑定, 意味着连**服务端自己都不确定自己的网络地址**, 就没办法公布给客户端
+>
+> 那客户端调用connect时, 怎么确定服务端的网络地址呢??
+>
+> 所以服务端必须要bind
+>
+> 而客户端只需要服务端的网络地址, 即可建立连接, 不知道自己的网络地址, 影响不大
+>
+> 所以: 客户端的bind不是必须的
 
 
 
-​		
+
 ​	作业：
 ​		1，设置好电脑，虚拟机及开发板的ip
 ​		2，了解 TCP 传输层头 的结构
@@ -214,3 +252,4 @@ int listen(int s, int backlog);
 ​		
 ​		
 ​		
+
